@@ -1,0 +1,12 @@
+# MUST WARN (not fail): a scheme loaded without projection rules. Its
+# designations are accepted but cannot be checked.
+@prefix weso: <https://w3id.org/ontoforge/weso/> .
+@prefix rdswtg: <https://w3id.org/ontoforge/weso/align/rds-wtg/> .
+@prefix ex: <https://example.org/fleet/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+<urn:fixture:scheme-without-contract> a owl:Ontology ; owl:imports <https://example.org/fleet/blade-replacement> .
+ex:operator-tags a weso:DesignationScheme ; rdfs:label "Operator X tag list" .
+ex:d-op a weso:Designation ; rdfs:label "WTG07-BLD-B" ;
+  weso:fromScheme ex:operator-tags ; weso:designates ex:pos-T07-blade-B .

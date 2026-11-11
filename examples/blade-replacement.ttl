@@ -1,0 +1,156 @@
+################################################################################
+#  Example: blade replacement on turbine T07
+#
+#  T07 commissioned 2016-05-20. Figures computed as of 2026-09-07.
+#    Blade A - original unit, still installed
+#    Blade B - original unit failed after ~8 years and was replaced
+#    Blade C - original unit, still installed
+#  All four blades are the same model, ACME B-73P.
+#
+#  Walkthrough: docs/worked-examples.md
+################################################################################
+
+@prefix weso:   <https://w3id.org/ontoforge/weso/> .
+@prefix rdswtg: <https://w3id.org/ontoforge/weso/align/rds-wtg/> .
+@prefix ex:     <https://example.org/fleet/> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+
+<https://example.org/fleet/blade-replacement> a owl:Ontology ;
+  owl:imports <https://w3id.org/ontoforge/weso/align/rds-wtg/> .
+
+
+# 1. FUNCTION TYPE - a class. Each blade bears its own instance of it.
+ex:AerodynamicTorqueFunction a owl:Class ;
+  rdfs:subClassOf weso:ComponentFunction ;
+  rdfs:label "aerodynamic torque function"@en ;
+  skos:definition "The function of converting kinetic energy of the wind into torque about the rotor axis."@en .
+
+
+# 2. COMPONENT TYPES - kinds of thing. Units are rdf:type of these, and inherit
+#    the function through the class restriction.
+ex:WindTurbine a owl:Class ;
+  rdfs:subClassOf weso:ComponentUnit ;
+  rdfs:label "wind turbine"@en .
+
+ex:Blade a owl:Class ;
+  rdfs:subClassOf weso:ComponentUnit ;
+  rdfs:subClassOf [ a owl:Restriction ;
+                    owl:onProperty     weso:bearsFunction ;
+                    owl:someValuesFrom ex:AerodynamicTorqueFunction ] ;
+  rdfs:label "blade"@en .
+
+
+# 3. COMPONENT MODEL - the manufacturer's catalogue entry. Not a kind of blade.
+ex:B73P a weso:ComponentModel ;
+  rdfs:label         "ACME B-73P, 73.5 m"@en ;
+  weso:modelOfType   ex:Blade ;
+  weso:partNumber    "ACME-B73P" ;
+  weso:modelRevision "C" ;
+  weso:nominalMassKg 27500.0 .
+
+
+# 4. POSITION KINDS - one kind serves all three blade slots, so a fleet
+#    contributes three blade positions per turbine to any statistic.
+ex:pk-rotor a weso:PositionKind ; rdfs:label "rotor position"@en .
+
+ex:pk-blade a weso:PositionKind ;
+  rdfs:label              "blade position"@en ;
+  weso:kindParent         ex:pk-rotor ;
+  weso:prescribesFunction ex:AerodynamicTorqueFunction ;
+  weso:attributionScope   ex:UnitOnly .
+
+ex:UnitOnly a weso:AttributionScope ; rdfs:label "unit only"@en .
+
+
+# 5. COMPONENT POSITIONS - three slots in T07, identical in every modelled
+#    respect. Only their designations (block 6) tell them apart. There is no
+#    nominal type on a position: what sits there is a fact about the occupant.
+ex:T07 a ex:WindTurbine ; rdfs:label "Turbine T07"@en .
+
+ex:pos-T07-rotor a weso:ComponentPosition ;
+  weso:instantiatesKind ex:pk-rotor ; weso:positionOf ex:T07 .
+
+ex:pos-T07-blade-A a weso:ComponentPosition ;
+  rdfs:label "blade position A, T07"@en ;
+  weso:instantiatesKind ex:pk-blade ; weso:positionOf ex:T07 ;
+  weso:assemblyParent ex:pos-T07-rotor .
+
+ex:pos-T07-blade-B a weso:ComponentPosition ;
+  rdfs:label "blade position B, T07"@en ;
+  weso:instantiatesKind ex:pk-blade ; weso:positionOf ex:T07 ;
+  weso:assemblyParent ex:pos-T07-rotor .
+
+ex:pos-T07-blade-C a weso:ComponentPosition ;
+  rdfs:label "blade position C, T07"@en ;
+  weso:instantiatesKind ex:pk-blade ; weso:positionOf ex:T07 ;
+  weso:assemblyParent ex:pos-T07-rotor .
+
+
+# 6. DESIGNATIONS - RDS for WTG names positions, never units. The function
+#    aspect nests blades under the rotor system; the product aspect puts them
+#    directly under the turbine. Same position, two parent chains.
+ex:d-bladeA-fn a weso:Designation ; rdfs:label "=A1=RB1=RB1" ;
+  weso:fromScheme rdswtg:scheme ; weso:designates ex:pos-T07-blade-A ; weso:granularityLevel rdswtg:depth2 .
+ex:d-bladeA-pr a weso:Designation ; rdfs:label "-A1-RB1" ;
+  weso:fromScheme rdswtg:scheme ; weso:designates ex:pos-T07-blade-A ; weso:granularityLevel rdswtg:depth1 .
+ex:d-bladeB-fn a weso:Designation ; rdfs:label "=A1=RB1=RB2" ;
+  weso:fromScheme rdswtg:scheme ; weso:designates ex:pos-T07-blade-B ; weso:granularityLevel rdswtg:depth2 .
+ex:d-bladeB-pr a weso:Designation ; rdfs:label "-A1-RB2" ;
+  weso:fromScheme rdswtg:scheme ; weso:designates ex:pos-T07-blade-B ; weso:granularityLevel rdswtg:depth1 .
+ex:d-bladeC-fn a weso:Designation ; rdfs:label "=A1=RB1=RB3" ;
+  weso:fromScheme rdswtg:scheme ; weso:designates ex:pos-T07-blade-C ; weso:granularityLevel rdswtg:depth2 .
+ex:d-bladeC-pr a weso:Designation ; rdfs:label "-A1-RB3" ;
+  weso:fromScheme rdswtg:scheme ; weso:designates ex:pos-T07-blade-C ; weso:granularityLevel rdswtg:depth1 .
+
+
+# 7. A MANUFACTURER'S SERIAL REGISTER - also a scheme, with its own contract:
+#    its designations name units, and only units.
+ex:acme-serials a weso:DesignationScheme ; rdfs:label "ACME blade serial register"@en .
+ex:acme-serials-rule a weso:ProjectionRule ;
+  weso:appliesToScheme ex:acme-serials ;
+  weso:sourceConstruct "serial number" ;
+  weso:projectsOnto weso:ComponentUnit .
+
+
+# 8. UNITS - four physical blades. Measured mass on each; catalogue mass on the model.
+ex:blade-sn-1001 a ex:Blade ; weso:conformsTo ex:B73P ; weso:hasMassKg 27480.0 .
+ex:blade-sn-1002 a ex:Blade ; weso:conformsTo ex:B73P ; weso:hasMassKg 27510.0 .
+ex:blade-sn-1003 a ex:Blade ; weso:conformsTo ex:B73P ; weso:hasMassKg 27495.0 .
+ex:blade-sn-4417 a ex:Blade ; weso:conformsTo ex:B73P ; weso:hasMassKg 27520.0 .
+
+ex:d-sn-1001 a weso:Designation ; rdfs:label "ACME-B73P-1001" ; weso:fromScheme ex:acme-serials ; weso:designates ex:blade-sn-1001 .
+ex:d-sn-1002 a weso:Designation ; rdfs:label "ACME-B73P-1002" ; weso:fromScheme ex:acme-serials ; weso:designates ex:blade-sn-1002 .
+ex:d-sn-1003 a weso:Designation ; rdfs:label "ACME-B73P-1003" ; weso:fromScheme ex:acme-serials ; weso:designates ex:blade-sn-1003 .
+ex:d-sn-4417 a weso:Designation ; rdfs:label "ACME-B73P-4417" ; weso:fromScheme ex:acme-serials ; weso:designates ex:blade-sn-4417 .
+
+
+# 9. OCCUPANCIES - four occupancies over three positions.
+ex:occ-T07-A-1 a weso:PositionOccupancy ;
+  weso:occupiedPosition ex:pos-T07-blade-A ; weso:occupant ex:blade-sn-1001 ;
+  weso:occupancyStart "2016-05-20T00:00:00"^^xsd:dateTime .
+
+ex:occ-T07-B-1 a weso:PositionOccupancy ;
+  weso:occupiedPosition ex:pos-T07-blade-B ; weso:occupant ex:blade-sn-1002 ;
+  weso:occupancyStart "2016-05-20T00:00:00"^^xsd:dateTime ;
+  weso:occupancyEnd   "2024-06-11T00:00:00"^^xsd:dateTime .
+
+ex:occ-T07-B-2 a weso:PositionOccupancy ;
+  weso:occupiedPosition ex:pos-T07-blade-B ; weso:occupant ex:blade-sn-4417 ;
+  weso:occupancyStart "2024-06-18T00:00:00"^^xsd:dateTime .
+
+ex:occ-T07-C-1 a weso:PositionOccupancy ;
+  weso:occupiedPosition ex:pos-T07-blade-C ; weso:occupant ex:blade-sn-1003 ;
+  weso:occupancyStart "2016-05-20T00:00:00"^^xsd:dateTime .
+
+
+# 10. EVENTS. "Original" and "replacement" are not asserted anywhere; they are
+#     derived from the occupancy record (examples/queries/original-vs-replacement.rq).
+ex:ev-remove-B-1  a weso:RemovalEvent      ; weso:affectedOccupancy ex:occ-T07-B-1 ; weso:eventDate "2024-06-11T00:00:00"^^xsd:dateTime .
+ex:ev-install-B-2 a weso:InstallationEvent ; weso:affectedOccupancy ex:occ-T07-B-2 ; weso:eventDate "2024-06-18T00:00:00"^^xsd:dateTime .
+
+ex:fail-T07-B-2024 a weso:FailureEvent ;
+  weso:affectedOccupancy ex:occ-T07-B-1 ;
+  weso:eventDate "2024-06-11T00:00:00"^^xsd:dateTime .

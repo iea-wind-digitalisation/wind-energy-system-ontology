@@ -1,0 +1,36 @@
+################################################################################
+#  WESO alignment module: <SCHEME NAME, VERSION>
+#
+#  Replace every <...>. Keep one projection rule per form of identifier the
+#  scheme issues. Add an example and a must-fail fixture alongside.
+################################################################################
+
+@prefix weso:    <https://w3id.org/ontoforge/weso/> .
+@prefix myscheme: <https://w3id.org/ontoforge/weso/align/SCHEME-ID/> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<https://w3id.org/ontoforge/weso/align/SCHEME-ID/> a owl:Ontology ;
+  owl:imports <https://w3id.org/ontoforge/weso/> ;
+  dcterms:title "WESO alignment: <SCHEME NAME>"@en .
+
+myscheme:scheme a weso:DesignationScheme ;
+  rdfs:label "<SCHEME NAME, VERSION>"@en .
+
+# One rule per form of identifier. projectsOnto is one of:
+#   weso:ComponentPosition  weso:PositionKind  weso:ComponentUnit
+#   weso:PopulationItem     weso:PortionOfMaterial
+#   weso:ComponentModel     weso:Space
+myscheme:rule-NAME a weso:ProjectionRule ;
+  rdfs:label "<what this rule covers>"@en ;
+  weso:appliesToScheme myscheme:scheme ;
+  weso:sourceConstruct "<prefix, column name, or field>" ;   # repeat for a compound key
+  weso:projectsOnto weso:ComponentPosition ;
+  skos:scopeNote "<anything a reader needs to apply the rule correctly>"@en .
+
+# Optional: the scheme's own levels. Do not relate them to another scheme's
+# levels with finerThan unless the pull request argues the comparison.
+myscheme:levels a weso:GranularityScale ; rdfs:label "<SCHEME> levels"@en .
+myscheme:level-1 a weso:GranularityLevel ; rdfs:label "<level name>"@en ; weso:inScale myscheme:levels .

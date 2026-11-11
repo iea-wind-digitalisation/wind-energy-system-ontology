@@ -1,0 +1,150 @@
+################################################################################
+#  WESO core shapes (SHACL)
+#
+#  OWL describes what can exist; it never reports what is missing or wrong.
+#  These shapes do. Run them over a data graph that includes the ontology
+#  (so rdfs:subClassOf is available to the SPARQL constraints).
+#
+#    python -m pytest            runs them over every example
+#    scripts/validate.py FILE    runs them over your own data
+################################################################################
+
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix weso:   <https://w3id.org/ontoforge/weso/> .
+@prefix wesosh: <https://w3id.org/ontoforge/weso/shapes/> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+
+wesosh: sh:declare
+  [ sh:prefix "weso" ; sh:namespace "https://w3id.org/ontoforge/weso/"^^xsd:anyURI ] ,
+  [ sh:prefix "owl"  ; sh:namespace "http://www.w3.org/2002/07/owl#"^^xsd:anyURI ] ,
+  [ sh:prefix "rdfs" ; sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^xsd:anyURI ] .
+
+
+# --- 1. Every designation carries its provenance ------------------------------
+wesosh:DesignationShape a sh:NodeShape ;
+  sh:targetClass weso:Designation ;
+  sh:property [ sh:path rdfs:label ; sh:minCount 1 ;
+                sh:message "A designation must carry its string as rdfs:label." ] ;
+  sh:property [ sh:path weso:fromScheme ; sh:minCount 1 ; sh:maxCount 1 ;
+                sh:class weso:DesignationScheme ;
+                sh:message "A designation must come from exactly one scheme; without it the string cannot be interpreted." ] ;
+  sh:property [ sh:path weso:designates ; sh:minCount 1 ; sh:maxCount 1 ;
+                sh:message "A designation must designate exactly one thing." ] .
+
+
+# --- 2. A designation names what its scheme's contract says it names ----------
+#  This is the check that catches an RDS tag mapped onto a serialised unit,
+#  or a part number mapped onto an individual item.
+wesosh:DesignationTargetShape a sh:NodeShape ;
+  sh:targetClass weso:Designation ;
+  sh:sparql [
+    a sh:SPARQLConstraint ;
+    sh:message "Designation {$this} from scheme {?scheme} names {?target}, which is not of any kind that scheme's projection rules allow." ;
+    sh:prefixes wesosh: ;
+    sh:select """
+      SELECT $this ?scheme ?target WHERE {
+        $this weso:fromScheme ?scheme ; weso:designates ?target .
+        FILTER EXISTS { ?anyRule weso:appliesToScheme ?scheme }
+        FILTER NOT EXISTS {
+          ?rule weso:appliesToScheme ?scheme ; weso:projectsOnto ?allowed .
+          ?target a/rdfs:subClassOf* ?allowed .
+        }
+      }""" ] .
+
+# Severity is read from the shape, so the warning needs a shape of its own.
+wesosh:SchemeHasContractShape a sh:NodeShape ;
+  sh:targetClass weso:Designation ;
+  sh:severity sh:Warning ;
+  sh:sparql [
+    a sh:SPARQLConstraint ;
+    sh:message "Scheme {?scheme} has no projection rules, so designation {$this} cannot be checked." ;
+    sh:prefixes wesosh: ;
+    sh:select """
+      SELECT $this ?scheme WHERE {
+        $this weso:fromScheme ?scheme .
+        FILTER NOT EXISTS { ?rule weso:appliesToScheme ?scheme }
+      }""" ] .
+
+
+# --- 3. Positions ---------------------------------------------------------------
+wesosh:PositionShape a sh:NodeShape ;
+  sh:targetClass weso:ComponentPosition ;
+  sh:property [ sh:path weso:instantiatesKind ; sh:minCount 1 ; sh:maxCount 1 ;
+                sh:class weso:PositionKind ;
+                sh:message "A component position must instantiate exactly one position kind; otherwise it falls out of every statistic." ] ;
+  sh:property [ sh:path weso:positionOf ; sh:maxCount 1 ] .
+
+
+# --- 4. Occupancies --------------------------------------------------------------
+wesosh:OccupancyShape a sh:NodeShape ;
+  sh:targetClass weso:PositionOccupancy ;
+  sh:property [ sh:path weso:occupiedPosition ; sh:minCount 1 ; sh:maxCount 1 ;
+                sh:class weso:ComponentPosition ] ;
+  sh:property [ sh:path weso:occupant ; sh:minCount 1 ; sh:maxCount 1 ] ;
+  sh:property [ sh:path weso:occupancyStart ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ;
+                sh:message "An occupancy needs a start date; it is the basis of exposure time." ] ;
+  sh:property [ sh:path weso:occupancyEnd ; sh:maxCount 1 ; sh:datatype xsd:dateTime ] ;
+  sh:sparql [
+    a sh:SPARQLConstraint ;
+    sh:message "Occupancy {$this} ends ({?end}) before it starts ({?start})." ;
+    sh:prefixes wesosh: ;
+    sh:select """
+      SELECT $this ?start ?end WHERE {
+        $this weso:occupancyStart ?start ; weso:occupancyEnd ?end .
+        FILTER (?end < ?start)
+      }""" ] ;
+
+  # Two units cannot be in the same slot at the same time.
+  sh:sparql [
+    a sh:SPARQLConstraint ;
+    sh:message "Occupancies {$this} and {?other} put two component units in position {?pos} at the same time." ;
+    sh:prefixes wesosh: ;
+    sh:select """
+      SELECT $this ?other ?pos WHERE {
+        $this  weso:occupiedPosition ?pos ; weso:occupant ?u1 ; weso:occupancyStart ?s1 .
+        ?other weso:occupiedPosition ?pos ; weso:occupant ?u2 ; weso:occupancyStart ?s2 .
+        FILTER (STR($this) < STR(?other))
+        ?u1 a/rdfs:subClassOf* weso:ComponentUnit .
+        ?u2 a/rdfs:subClassOf* weso:ComponentUnit .
+        OPTIONAL { $this  weso:occupancyEnd ?e1 }
+        OPTIONAL { ?other weso:occupancyEnd ?e2 }
+        FILTER ( (!BOUND(?e1) || ?s2 < ?e1) && (!BOUND(?e2) || ?s1 < ?e2) )
+      }""" ] ;
+
+  # Admissibility: the occupant must bear the function the slot prescribes.
+  # A function is borne if the item asserts it directly, or if one of its
+  # types (or their superclasses) carries a bearsFunction restriction on that
+  # function type or a subclass of it.
+  sh:sparql [
+    a sh:SPARQLConstraint ;
+    sh:message "Occupant {?item} of {$this} does not bear {?fn}, which position kind {?kind} prescribes." ;
+    sh:prefixes wesosh: ;
+    sh:select """
+      SELECT $this ?item ?kind ?fn WHERE {
+        $this weso:occupiedPosition/weso:instantiatesKind ?kind ;
+              weso:occupant ?item .
+        ?kind weso:prescribesFunction ?fn .
+        FILTER NOT EXISTS {
+          { ?item a/rdfs:subClassOf* ?r .
+            ?r owl:onProperty weso:bearsFunction ; owl:someValuesFrom ?f . }
+          UNION
+          { ?item weso:bearsFunction/a ?f . }
+          ?f rdfs:subClassOf* ?fn .
+        }
+      }""" ] .
+
+
+# --- 5. Component models -------------------------------------------------------
+wesosh:ComponentModelShape a sh:NodeShape ;
+  sh:targetClass weso:ComponentModel ;
+  sh:property [ sh:path weso:nominalMassKg ; sh:maxCount 1 ] ;
+  sh:property [ sh:path weso:modelOfType ; sh:maxCount 1 ] .
+
+# A component model is information; it must not carry measured mass.
+wesosh:NoMeasuredMassOnModel a sh:NodeShape ;
+  sh:targetClass weso:ComponentModel ;
+  sh:property [ sh:path weso:hasMassKg ; sh:maxCount 0 ;
+                sh:message "Use nominalMassKg on a component model; hasMassKg is for a particular physical item." ] .

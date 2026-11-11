@@ -1,0 +1,12 @@
+# MUST FAIL: an RDS tag mapped onto a serialised blade instead of its slot.
+# This is the most common mistake when importing tag lists, because a CMMS
+# row often holds a tag and a serial number side by side.
+@prefix weso: <https://w3id.org/ontoforge/weso/> .
+@prefix rdswtg: <https://w3id.org/ontoforge/weso/align/rds-wtg/> .
+@prefix ex: <https://example.org/fleet/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+<urn:fixture:rds-tag-names-a-unit> a owl:Ontology ; owl:imports <https://example.org/fleet/blade-replacement> .
+ex:d-bad a weso:Designation ; rdfs:label "-A1-RB2" ;
+  weso:fromScheme rdswtg:scheme ; weso:designates ex:blade-sn-4417 .

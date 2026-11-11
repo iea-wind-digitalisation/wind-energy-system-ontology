@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Lets Protege and ROBOT resolve imports from this folder instead of the web. -->
+<catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml-catalog">
+  <uri name="https://w3id.org/ontoforge/weso/imports/bfo-core.owl" uri="imports/bfo-core.owl"/>
+  <uri name="https://w3id.org/ontoforge/weso/imports/iao-terms.ttl" uri="imports/iao-terms.ttl"/>
+  <uri name="https://w3id.org/ontoforge/weso/" uri="weso-core.ttl"/>
+  <uri name="https://w3id.org/ontoforge/weso/align/rds-wtg/" uri="../alignments/rds-wtg/rds-wtg.ttl"/>
+</catalog>

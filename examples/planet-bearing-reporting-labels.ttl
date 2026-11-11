@@ -1,0 +1,24 @@
+################################################################################
+#  Example of an OPTIONAL alignment module: export labels
+#
+#  Attaches an external reporting vocabulary to WESO position kinds, so that
+#  statistics computed in WESO terms can be exported under that vocabulary's
+#  labels. Here the target is the Reliawind component taxonomy (as published in
+#  SKOS), but any reporting scheme works the same way - ISO 14224 equipment
+#  classes, an operator's own buckets.
+#
+#  Nothing in the kernel, the shapes or the queries depends on this file.
+#  Delete it and every computation still runs; only the export labels go.
+################################################################################
+
+@prefix weso:     <https://w3id.org/ontoforge/weso/> .
+@prefix ex:       <https://example.org/fleet/> .
+@prefix reliatax: <http://purl.ontoforge.org/wedo/reliatax/> .
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+
+<https://example.org/fleet/planet-bearing-reporting-labels> a owl:Ontology ;
+  owl:imports <https://example.org/fleet/planet-bearing> .
+
+ex:pk-gearbox        weso:hasReportingLabel reliatax:Gearbox .
+ex:pk-planet-bearing weso:hasReportingLabel reliatax:GearboxBearingPlanet .
+ex:pk-drivetrain     weso:hasReportingLabel reliatax:DriveTrainModule .

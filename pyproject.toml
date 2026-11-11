@@ -1,0 +1,6 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+  # raised inside rdflib's JSON-LD parser, not by WESO
+  "ignore:ConjunctiveGraph is deprecated:DeprecationWarning",
+]

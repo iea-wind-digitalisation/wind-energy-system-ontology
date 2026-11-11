@@ -1,0 +1,20 @@
+# Resolve a designation string to what it names.
+#
+# Bind ?string (and optionally ?scheme). The same string can resolve to
+# different things in different schemes - that is the point of carrying the
+# scheme. ?kindOfThing reports which WESO primitive the target is.
+
+PREFIX weso: <https://w3id.org/ontoforge/weso/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?scheme ?target ?kindOfThing
+WHERE {
+  ?d a weso:Designation ;
+     rdfs:label      ?label ;
+     weso:fromScheme ?scheme ;
+     weso:designates ?target .
+  FILTER (STR(?label) = STR(?string))
+  ?target a/rdfs:subClassOf* ?kindOfThing .
+  VALUES ?kindOfThing { weso:ComponentPosition weso:ComponentUnit weso:PopulationItem
+                        weso:PortionOfMaterial weso:ComponentModel weso:PositionKind weso:Space }
+}

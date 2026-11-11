@@ -1,0 +1,18 @@
+# Minimal import of the two IAO terms WESO uses (MIREOT-style).
+# Labels and parents verified against IAO master/iao.owl.
+# Source: Information Artifact Ontology, http://purl.obolibrary.org/obo/iao.owl (CC BY 4.0)
+
+@prefix obo:  <http://purl.obolibrary.org/obo/> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+<https://w3id.org/ontoforge/weso/imports/iao-terms.ttl> a owl:Ontology ;
+  rdfs:comment "Extract of IAO: information content entity and directive information entity." .
+
+obo:IAO_0000030 a owl:Class ;
+  rdfs:label "information content entity" ;
+  rdfs:subClassOf obo:BFO_0000031 .              # generically dependent continuant
+
+obo:IAO_0000033 a owl:Class ;
+  rdfs:label "directive information entity" ;
+  rdfs:subClassOf obo:IAO_0000030 .

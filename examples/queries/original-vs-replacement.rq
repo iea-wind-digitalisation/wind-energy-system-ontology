@@ -1,0 +1,18 @@
+# Derive "original" and "replacement" from the occupancy record.
+#
+# Nobody asserts these roles. An occupancy is original if no earlier occupancy
+# of the same position exists, and a replacement otherwise.
+
+PREFIX weso: <https://w3id.org/ontoforge/weso/>
+
+SELECT ?pos ?occ ?item ?start ?role
+WHERE {
+  ?occ weso:occupiedPosition ?pos ;
+       weso:occupant         ?item ;
+       weso:occupancyStart   ?start .
+  BIND (IF (EXISTS {
+              ?earlier weso:occupiedPosition ?pos ; weso:occupancyStart ?s0 .
+              FILTER (?s0 < ?start) },
+            "replacement", "original") AS ?role)
+}
+ORDER BY ?pos ?start

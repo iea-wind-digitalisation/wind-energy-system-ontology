@@ -1,0 +1,14 @@
+# Label WESO results with an external reporting vocabulary - if one is loaded.
+#
+# The label is attached AFTER the computation, through an OPTIONAL join. If no
+# alignment module is loaded, the query still runs and ?label is empty.
+
+PREFIX weso: <https://w3id.org/ontoforge/weso/>
+
+SELECT ?kind ?label (COUNT(DISTINCT ?occ) AS ?occupancies) (COUNT(DISTINCT ?failure) AS ?failures)
+WHERE {
+  ?occ weso:occupiedPosition/weso:instantiatesKind ?kind .
+  OPTIONAL { ?failure a weso:FailureEvent ; weso:affectedOccupancy ?occ }
+  OPTIONAL { ?kind weso:hasReportingLabel ?label }
+}
+GROUP BY ?kind ?label

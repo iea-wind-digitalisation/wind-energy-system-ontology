@@ -1,0 +1,21 @@
+# Exposure and failures per occupancy, grouped later by position kind.
+#
+# One row per occupancy. Position-time is summed over these rows, so a
+# replacement extends the same position's record instead of adding a fourth
+# blade to a three-blade turbine. Note there is no foreign vocabulary here:
+# the grouping key is WESO's own position kind.
+#
+# Open occupancies have no ?end; the caller supplies an as-of date.
+
+PREFIX weso: <https://w3id.org/ontoforge/weso/>
+
+SELECT ?kind ?pos ?occ ?start ?end (COUNT(DISTINCT ?failure) AS ?failures)
+WHERE {
+  ?occ  weso:occupiedPosition ?pos ;
+        weso:occupancyStart   ?start .
+  ?pos  weso:instantiatesKind ?kind .
+  OPTIONAL { ?occ weso:occupancyEnd ?end }
+  OPTIONAL { ?failure a weso:FailureEvent ; weso:affectedOccupancy ?occ }
+}
+GROUP BY ?kind ?pos ?occ ?start ?end
+ORDER BY ?kind ?pos ?start

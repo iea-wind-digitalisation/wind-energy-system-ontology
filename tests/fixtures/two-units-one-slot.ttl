@@ -1,0 +1,12 @@
+# MUST FAIL: a second blade recorded in position A while the original is
+# still installed. Usually a missing removal record.
+@prefix weso: <https://w3id.org/ontoforge/weso/> .
+@prefix rdswtg: <https://w3id.org/ontoforge/weso/align/rds-wtg/> .
+@prefix ex: <https://example.org/fleet/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+<urn:fixture:two-units-one-slot> a owl:Ontology ; owl:imports <https://example.org/fleet/blade-replacement> .
+ex:blade-sn-5000 a ex:Blade .
+ex:occ-bad a weso:PositionOccupancy ; weso:occupiedPosition ex:pos-T07-blade-A ;
+  weso:occupant ex:blade-sn-5000 ; weso:occupancyStart "2021-03-01T00:00:00"^^xsd:dateTime .

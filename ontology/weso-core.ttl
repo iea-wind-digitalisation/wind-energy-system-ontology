@@ -1,0 +1,386 @@
+################################################################################
+#
+#  WESO - Wind Energy System Ontology
+#  Core kernel
+#
+#  A pivot layer between wind energy designation and classification systems
+#  (IEC 81346 / RDS-PP / RDS-PS / RDS for WTG, ISO 14224, OEM part catalogues,
+#  CMMS functional locations, failure-reporting vocabularies).
+#
+#  The kernel's job is disambiguation, not coverage. Every source system packs
+#  several distinct things into one string. The kernel gives each of them a
+#  separate, individually addressable home, so that a source system is bridged
+#  by declaring which home each of its constructs lands in.
+#
+#  In scope:     physical items, the slots they occupy, the kinds they
+#                instantiate, the designations that name any of these, and the
+#                machinery that makes cross-source aggregation checkable.
+#  Out of scope: component taxonomy (domain ontologies, e.g. WEO);
+#                signals and measurements (OpOn); failure modes, maintenance
+#                planning, LCA (extension modules).
+#
+#  Rationale for each decision: docs/adr/.   Open issues: docs/open-questions.md
+#
+#  Conventions
+#    - Pointers from an individual to a CLASS (a function type, a target
+#      primitive) are owl:AnnotationProperty, never object properties. This
+#      keeps the kernel in OWL 2 DL without punning. See ADR-0008.
+#    - Constraints that must FLAG violations live in shapes/ (SHACL), because
+#      OWL's open-world semantics never reports a missing fact as an error.
+#
+################################################################################
+
+@prefix weso:    <https://w3id.org/ontoforge/weso/> .
+@prefix obo:     <http://purl.obolibrary.org/obo/> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<https://w3id.org/ontoforge/weso/> a owl:Ontology ;
+  owl:versionIRI <https://w3id.org/ontoforge/weso/0.1.0/> ;
+  owl:versionInfo "0.1.0-draft" ;
+  dcterms:title "WESO - Wind Energy System Ontology (core kernel)"@en ;
+  dcterms:description "A BFO-aligned pivot layer that lets wind energy designation and classification systems be bridged without any one of them becoming the master."@en ;
+  dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+  owl:imports <https://w3id.org/ontoforge/weso/imports/bfo-core.owl> ,
+              <https://w3id.org/ontoforge/weso/imports/iao-terms.ttl> .
+
+# --- annotation properties used for definitions -------------------------------
+skos:definition a owl:AnnotationProperty .
+skos:scopeNote  a owl:AnnotationProperty .
+skos:example    a owl:AnnotationProperty .
+
+# Dates are xsd:dateTime. xsd:date is not in the OWL 2 datatype map, and
+# declaring it would make its literals illegal in OWL 2 DL. See ADR-0008.
+
+
+################################################################################
+# A. PHYSICAL LAYER - what exists materially
+################################################################################
+
+weso:PhysicalItem a owl:Class ;
+  rdfs:subClassOf obo:BFO_0000040 ;                               # material entity
+  rdfs:label "physical item"@en ;
+  skos:definition "A material entity that can occupy a component position and has a lifecycle."@en ;
+  skos:scopeNote "Never instantiated directly; use one of the three subclasses. They differ in whether the item keeps individual identity through operations and whether it is tracked individually or in quantity - not in whether it is solid or carries a serial number. This class sits at material entity because that is the only BFO level all three share."@en .
+
+weso:ComponentUnit a owl:Class ;
+  rdfs:subClassOf weso:PhysicalItem , obo:BFO_0000030 ;          # object
+  rdfs:label "component unit"@en ;
+  skos:definition "A discrete physical item that is tracked individually, typically by serial number."@en ;
+  skos:example "Blade serial 4417; gearbox serial 000-00-125; a whole wind turbine."@en ;
+  skos:scopeNote "Recursive: a turbine is a component unit occupying a position in a wind farm, so fleet-level and component-level questions use the same machinery. A serial number designates a component unit and nothing else does."@en .
+
+weso:PopulationItem a owl:Class ;
+  rdfs:subClassOf weso:PhysicalItem ;
+  rdfs:label "population item"@en ;
+  skos:definition "A set of discrete physical items that is tracked as a set rather than individually."@en ;
+  skos:example "The bolts of a flange; the rolling elements of a bearing; a set of brake pads."@en ;
+  skos:scopeNote "Needed because sub-unit interventions (renewing the rollers of a bearing) are otherwise invisible, and both failure attribution and replaced-mass accounting depend on them. BFO parent is open (likely object aggregate)."@en .
+
+weso:PortionOfMaterial a owl:Class ;
+  rdfs:subClassOf weso:PhysicalItem ;
+  rdfs:label "portion of material"@en ;
+  skos:definition "A quantity of material that merges and splits, and is tracked by amount."@en ;
+  skos:example "The oil charge of a gearbox; grease in a pitch bearing; coolant."@en ;
+  skos:scopeNote "Modelled as a physical item so that an oil change is an ordinary occupancy transition. One portion can serve several positions (shared lubricant), which makes failures at those positions statistically correlated. BFO parent is open."@en .
+
+weso:ComponentType a owl:Class ;
+  rdfs:label "component type"@en ;
+  skos:definition "A kind of physical item, characterised by the function its instances bear."@en ;
+  skos:scopeNote "A documentation anchor, not a BFO class. A concrete component type (Blade, PlanetBearing) is written as an owl:Class that is a subclass of a physical item class, with its function stated as a class restriction on weso:bearsFunction; units are rdf:type of it. Optionally, a type that must serve as a SKOS mapping target may also be asserted as an individual of this class (punning). Nothing in the kernel depends on that. See ADR-0006."@en .
+
+weso:ComponentModel a owl:Class ;
+  rdfs:subClassOf obo:IAO_0000030 ;                               # information content entity
+  rdfs:label "component model"@en ;
+  skos:definition "A manufacturer's product specification for a component, identified by a part number and revision."@en ;
+  skos:example "ACME B-73P rev C, a 73.5 m blade."@en ;
+  skos:scopeNote "An information entity, not a material one: it can be issued, revised and withdrawn without its installed instances ceasing to exist. Catalogue properties such as nominal mass belong here. A unit is rdf:type of a component type and conformsTo a component model. See ADR-0005."@en .
+
+weso:conformsTo a owl:ObjectProperty ;
+  rdfs:label "conforms to"@en ;
+  rdfs:domain weso:PhysicalItem ; rdfs:range weso:ComponentModel ;
+  skos:definition "Relates a physical item to the product specification it was made to."@en .
+
+weso:modelOfType a owl:AnnotationProperty ;
+  rdfs:label "model of type"@en ;
+  skos:definition "Points from a component model to the component type (an owl:Class) whose instances conform to it."@en ;
+  skos:scopeNote "Annotation property so that it can point at a class without punning. Convenience only: the same fact is reachable through any conforming unit."@en .
+
+weso:partNumber a owl:DatatypeProperty ;
+  rdfs:label "part number"@en ; rdfs:domain weso:ComponentModel ; rdfs:range xsd:string .
+weso:modelRevision a owl:DatatypeProperty ;
+  rdfs:label "model revision"@en ; rdfs:domain weso:ComponentModel ; rdfs:range xsd:string .
+weso:manufacturer a owl:ObjectProperty ;
+  rdfs:label "manufacturer"@en ; rdfs:domain weso:ComponentModel .
+
+weso:nominalMassKg a owl:DatatypeProperty ;
+  rdfs:label "nominal mass (kg)"@en ;
+  rdfs:domain weso:ComponentModel ; rdfs:range xsd:decimal ;
+  skos:definition "The catalogue mass of items made to this specification."@en .
+
+weso:hasMassKg a owl:DatatypeProperty ;
+  rdfs:label "has mass (kg)"@en ;
+  rdfs:domain weso:PhysicalItem ; rdfs:range xsd:decimal ;
+  skos:definition "The measured or recorded mass of this particular item."@en .
+
+weso:hasMaterial a owl:ObjectProperty ;
+  rdfs:label "has material"@en ;
+  rdfs:domain weso:PhysicalItem ;
+  skos:scopeNote "Hook for material and LCA extensions. Range deliberately left open."@en .
+
+
+################################################################################
+# B. POSITION LAYER - the slots things go into
+#    Positions are information, not space: blade 1 and blade 2 sweep through
+#    each other's regions and are told apart only by convention. See ADR-0002.
+################################################################################
+
+weso:PositionKind a owl:Class ;
+  rdfs:subClassOf obo:IAO_0000033 ;                               # directive information entity
+  rdfs:label "position kind"@en ;
+  skos:definition "A kind of slot as specified in design, shared by every turbine design that has such a slot."@en ;
+  skos:example "Blade position; gearbox position; planet bearing position; gearbox oil charge."@en ;
+  skos:scopeNote "WESO's native aggregation key. Reliability statistics are grouped by position kind, never by a foreign vocabulary's concept, which is what keeps WESO independent of the systems it bridges. Generic breakdown structures in designation standards populate this level. See ADR-0003."@en .
+
+weso:ComponentPosition a owl:Class ;
+  rdfs:subClassOf obo:IAO_0000030 ;                               # information content entity
+  rdfs:label "component position"@en ;
+  skos:definition "A slot in the as-built configuration of one particular unit, which physical items occupy over time."@en ;
+  skos:example "Blade position B of turbine T07."@en ;
+  skos:scopeNote "Persists while unoccupied and survives its occupants. Corresponds to a functional location or tag in maintenance systems. Identity is conventional, not material or geometric."@en .
+
+weso:instantiatesKind a owl:ObjectProperty , owl:FunctionalProperty ;
+  rdfs:label "instantiates kind"@en ;
+  rdfs:domain weso:ComponentPosition ; rdfs:range weso:PositionKind .
+
+weso:positionOf a owl:ObjectProperty ;
+  rdfs:label "position of"@en ;
+  rdfs:domain weso:ComponentPosition ; rdfs:range weso:ComponentUnit ;
+  skos:definition "Relates a position to the unit in whose as-built configuration it sits."@en .
+
+weso:kindParent a owl:ObjectProperty ;
+  rdfs:label "kind parent"@en ;
+  rdfs:domain weso:PositionKind ; rdfs:range weso:PositionKind .
+
+# Decomposition. One position, several parent chains: IEC 81346 aspects are
+# different views of the same object, and their trees do not line up (in RDS
+# for WTG the gear system is =A1=JF2 functionally but -A1-JF1 as a product).
+
+weso:functionalParent a owl:ObjectProperty ;
+  rdfs:label "functional parent"@en ;
+  rdfs:domain weso:ComponentPosition ; rdfs:range weso:ComponentPosition ;
+  skos:scopeNote "Parent in the function-oriented breakdown (IEC 81346 '=' aspect)."@en .
+
+weso:assemblyParent a owl:ObjectProperty ;
+  rdfs:label "assembly parent"@en ;
+  rdfs:domain weso:ComponentPosition ; rdfs:range weso:ComponentPosition ;
+  skos:scopeNote "Parent in the product-oriented breakdown (IEC 81346 '-' aspect)."@en .
+
+weso:hostedBy a owl:ObjectProperty ;
+  rdfs:label "hosted by"@en ;
+  rdfs:domain weso:ComponentPosition ; rdfs:range weso:ComponentPosition ;
+  skos:scopeNote "Host of installation (IEC 81346 '+' aspect)."@en .
+
+weso:locatedIn a owl:ObjectProperty ;
+  rdfs:label "located in"@en ;
+  rdfs:domain weso:ComponentPosition ; rdfs:range weso:Space ;
+  skos:scopeNote "Site of installation (IEC 81346 '++' aspect)."@en .
+
+weso:Space a owl:Class ;
+  rdfs:subClassOf obo:BFO_0000029 ;                               # site
+  rdfs:label "space"@en ;
+  skos:definition "A region in or around a turbine that can contain physical items."@en ;
+  skos:example "Nacelle; hub interior; tower section 2."@en .
+
+
+################################################################################
+# C. FUNCTION AND ROLE
+#    Three different things that source systems all call "function". See ADR-0001.
+################################################################################
+
+weso:ComponentFunction a owl:Class ;
+  rdfs:subClassOf obo:BFO_0000034 ;                               # function
+  rdfs:label "component function"@en ;
+  skos:definition "A function borne by a physical item in virtue of its physical makeup."@en ;
+  skos:scopeNote "Specific function types are subclasses (e.g. AerodynamicTorqueFunction); each blade bears its own instance. Not what an IEC 81346 function-aspect designation names - that designates a component position."@en .
+
+weso:bearsFunction a owl:ObjectProperty ;
+  rdfs:label "bears function"@en ;
+  rdfs:domain weso:PhysicalItem ; rdfs:range weso:ComponentFunction ;
+  skos:scopeNote "Usually stated on a component type as a class restriction, e.g. Blade rdfs:subClassOf (bearsFunction some AerodynamicTorqueFunction), so every unit of that type inherits it."@en .
+
+weso:prescribesFunction a owl:AnnotationProperty ;
+  rdfs:label "prescribes function"@en ;
+  skos:definition "Points from a position kind to the function type (an owl:Class) an occupant must bear."@en ;
+  skos:scopeNote "The only constraint WESO places on what may occupy a position. Checked by shapes/weso-core-shapes.ttl, not by an OWL reasoner. Constraining by function rather than by type admits valid cross-manufacturer substitutes. A nominal type per slot is deliberately absent: it is either derivable from the occupant or is turbine-model design data. See ADR-0007."@en .
+
+weso:OccupancyRole a owl:Class ;
+  rdfs:subClassOf obo:BFO_0000023 ;                               # role
+  rdfs:label "occupancy role"@en ;
+  skos:definition "A role an item has in virtue of its installation history, such as original, replacement or spare."@en ;
+  skos:scopeNote "Not enumerated in the kernel. Original and replacement are derivable from the occupancy record (see examples/queries/original-vs-replacement.rq); refurbishment makes any fixed list grow without bound."@en .
+
+
+################################################################################
+# D. LIFECYCLE
+################################################################################
+
+weso:PositionOccupancy a owl:Class ;
+  rdfs:subClassOf obo:BFO_0000015 ;                               # process
+  rdfs:label "position occupancy"@en ;
+  skos:definition "An item filling a component position over an interval of time."@en ;
+  skos:scopeNote "Source of exposure time and so of every reliability denominator: position-time, not unit-time (replacements would inflate the population) and not turbine-time (multiplicity would be lost)."@en .
+
+weso:occupiedPosition a owl:ObjectProperty , owl:FunctionalProperty ;
+  rdfs:label "occupied position"@en ;
+  rdfs:domain weso:PositionOccupancy ; rdfs:range weso:ComponentPosition .
+
+weso:occupant a owl:ObjectProperty ;
+  rdfs:label "occupant"@en ;
+  rdfs:domain weso:PositionOccupancy ; rdfs:range weso:PhysicalItem .
+
+weso:occupantQuantity a owl:DatatypeProperty ;
+  rdfs:label "occupant quantity"@en ;
+  rdfs:domain weso:PositionOccupancy ;
+  skos:scopeNote "For population items and portions of material, which do not occupy one-to-one."@en .
+
+weso:bearsRole a owl:ObjectProperty ;
+  rdfs:label "bears role"@en ;
+  rdfs:domain weso:PositionOccupancy ; rdfs:range weso:OccupancyRole .
+
+weso:occupancyStart a owl:DatatypeProperty , owl:FunctionalProperty ;
+  rdfs:label "occupancy start"@en ; rdfs:domain weso:PositionOccupancy ; rdfs:range xsd:dateTime .
+weso:occupancyEnd a owl:DatatypeProperty , owl:FunctionalProperty ;
+  rdfs:label "occupancy end"@en ; rdfs:domain weso:PositionOccupancy ; rdfs:range xsd:dateTime ;
+  skos:scopeNote "Absent while the occupancy is ongoing."@en .
+
+weso:InstallationEvent a owl:Class ;
+  rdfs:subClassOf obo:BFO_0000035 ;                               # process boundary
+  rdfs:label "installation event"@en ;
+  skos:definition "The instant at which an item begins to occupy a position."@en .
+weso:RemovalEvent a owl:Class ;
+  rdfs:subClassOf obo:BFO_0000035 ;
+  rdfs:label "removal event"@en ;
+  skos:definition "The instant at which an item stops occupying a position."@en .
+
+weso:RefurbishmentEvent a owl:Class ;
+  rdfs:subClassOf obo:BFO_0000015 ;
+  rdfs:label "refurbishment event"@en ;
+  skos:definition "An off-position intervention on a unit in which some of its constituents are replaced."@en ;
+  skos:scopeNote "Records what was actually replaced, which is what makes replaced-mass questions answerable: renewing a bearing's rollers is a fraction of its steel."@en .
+weso:replacedItem a owl:ObjectProperty ;
+  rdfs:label "replaced item"@en ;
+  rdfs:domain weso:RefurbishmentEvent ; rdfs:range weso:PhysicalItem .
+
+weso:FailureEvent a owl:Class ;
+  rdfs:subClassOf obo:BFO_0000015 ;
+  rdfs:label "failure event"@en ;
+  skos:scopeNote "Hook only. Failure modes and causes belong in an extension module."@en .
+
+weso:affectedOccupancy a owl:ObjectProperty ;
+  rdfs:label "affected occupancy"@en ;
+  rdfs:range weso:PositionOccupancy ;
+  skos:scopeNote "Used by failure, installation and removal events."@en .
+
+weso:eventDate a owl:DatatypeProperty ;
+  rdfs:label "event date"@en ; rdfs:range xsd:dateTime .
+
+
+################################################################################
+# E. DESIGNATION LAYER - the entry point
+################################################################################
+
+weso:Designation a owl:Class ;
+  rdfs:subClassOf obo:IAO_0000030 ;
+  rdfs:label "designation"@en ;
+  skos:definition "A string from a source system that names something, together with the scheme it comes from."@en ;
+  skos:example "'-A1-RB2' from RDS for WTG; 'ACME-B73P-4417' from a manufacturer's serial register."@en ;
+  skos:scopeNote "The string alone never says what it names - a serial number and a part number can look identical. The scheme decides, via its projection rules. The designated thing is a component model, position kind, component position, physical item or space."@en .
+
+weso:DesignationScheme a owl:Class ;
+  rdfs:label "designation scheme"@en ;
+  skos:definition "A system that issues designations: a standard, a manufacturer's register, an operator's tag list."@en .
+
+weso:fromScheme a owl:ObjectProperty , owl:FunctionalProperty ;
+  rdfs:label "from scheme"@en ;
+  rdfs:domain weso:Designation ; rdfs:range weso:DesignationScheme .
+
+weso:designates a owl:ObjectProperty ;
+  rdfs:label "designates"@en ;
+  rdfs:domain weso:Designation ;
+  skos:definition "Relates a designation to the thing it names."@en .
+
+
+################################################################################
+# F. COMPARABILITY - what turns "we mapped them" into "we can pool the data"
+################################################################################
+
+weso:GranularityScale a owl:Class ;
+  rdfs:label "granularity scale"@en ;
+  skos:definition "An ordered set of breakdown levels belonging to one scheme."@en ;
+  skos:scopeNote "Scales are scheme-local and not assumed commensurable. ISO 14224's equipment / subunit / maintainable item / part and the depth of an RDS tree are different measurements."@en .
+
+weso:GranularityLevel a owl:Class ;
+  rdfs:label "granularity level"@en ;
+  skos:definition "One level of a granularity scale, such as 'maintainable item' in ISO 14224 or depth 3 in an RDS tree."@en .
+
+weso:inScale a owl:ObjectProperty ;
+  rdfs:label "in scale"@en ;
+  rdfs:domain weso:GranularityLevel ; rdfs:range weso:GranularityScale .
+
+weso:finerThan a owl:ObjectProperty , owl:TransitiveProperty ;
+  rdfs:label "finer than"@en ;
+  rdfs:domain weso:GranularityLevel ; rdfs:range weso:GranularityLevel ;
+  skos:scopeNote "Assert across scales only where the comparison is defensible."@en .
+
+weso:granularityLevel a owl:ObjectProperty ;
+  rdfs:label "granularity level"@en ;
+  rdfs:range weso:GranularityLevel ;
+  skos:scopeNote "On a position kind (native depth) and on a designation (depth in its own scheme). The two can disagree; recording both is the point."@en .
+
+weso:AttributionScope a owl:Class ;
+  rdfs:label "attribution scope"@en ;
+  skos:definition "What a failure recorded at a position is taken to cover: the unit alone, the unit with its interfaces, or the whole assembly."@en ;
+  skos:scopeNote "Makes exporting to a foreign reporting scheme a checkable step rather than a silent assumption. Values are not yet fixed."@en .
+
+weso:attributionScope a owl:ObjectProperty ;
+  rdfs:label "attribution scope"@en ;
+  rdfs:domain weso:PositionKind ; rdfs:range weso:AttributionScope .
+
+weso:hasReportingLabel a owl:ObjectProperty ;
+  rdfs:label "has reporting label"@en ;
+  rdfs:domain weso:PositionKind ;
+  skos:definition "Relates a position kind to the bucket an external reporting scheme uses for the same statistical population."@en ;
+  skos:scopeNote "Used to label exports, never inside an aggregation. Stronger than skos:closeMatch, narrower than skos:exactMatch: the claim is only 'same statistical bucket'."@en .
+
+
+################################################################################
+# G. PROJECTION CONTRACT - the price of entry for a source system
+################################################################################
+
+weso:ProjectionRule a owl:Class ;
+  rdfs:label "projection rule"@en ;
+  skos:definition "A declaration that one construct of a designation scheme names one kind of WESO primitive, at a stated granularity."@en ;
+  skos:example "In RDS for WTG, a designation with the '-' prefix names a component position."@en ;
+  skos:scopeNote "Every designation is checked against the rules of its scheme (shapes/weso-core-shapes.ttl). A scheme with no rules can still be loaded but its designations are unchecked."@en .
+
+weso:appliesToScheme a owl:ObjectProperty ;
+  rdfs:label "applies to scheme"@en ;
+  rdfs:domain weso:ProjectionRule ; rdfs:range weso:DesignationScheme .
+
+weso:sourceConstruct a owl:DatatypeProperty ;
+  rdfs:label "source construct"@en ;
+  rdfs:domain weso:ProjectionRule ;
+  skos:scopeNote "Repeatable. Several values form a compound key: the constructs jointly determine the target, as when a logical node and a data object together are needed to resolve a position."@en .
+
+weso:projectsOnto a owl:AnnotationProperty ;
+  rdfs:label "projects onto"@en ;
+  skos:definition "Points from a projection rule to the WESO class (an owl:Class) that designations matching it must name."@en .
+
+weso:atGranularity a owl:ObjectProperty ;
+  rdfs:label "at granularity"@en ;
+  rdfs:domain weso:ProjectionRule ; rdfs:range weso:GranularityLevel .

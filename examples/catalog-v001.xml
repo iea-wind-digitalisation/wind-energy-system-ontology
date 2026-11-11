@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Lets Protege and ROBOT open the examples offline. -->
+<catalog prefer="public" xmlns="urn:oasis:names:tc:entity:xmlns:xml-catalog">
+  <uri name="https://w3id.org/ontoforge/weso/" uri="../ontology/weso-core.ttl"/>
+  <uri name="https://w3id.org/ontoforge/weso/imports/bfo-core.owl" uri="../ontology/imports/bfo-core.owl"/>
+  <uri name="https://w3id.org/ontoforge/weso/imports/iao-terms.ttl" uri="../ontology/imports/iao-terms.ttl"/>
+  <uri name="https://w3id.org/ontoforge/weso/align/rds-wtg/" uri="../alignments/rds-wtg/rds-wtg.ttl"/>
+  <uri name="https://example.org/fleet/blade-replacement" uri="blade-replacement.ttl"/>
+  <uri name="https://example.org/fleet/planet-bearing" uri="planet-bearing.ttl"/>
+</catalog>

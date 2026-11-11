@@ -1,0 +1,14 @@
+# MUST FAIL: end date before start date.
+@prefix weso: <https://w3id.org/ontoforge/weso/> .
+@prefix rdswtg: <https://w3id.org/ontoforge/weso/align/rds-wtg/> .
+@prefix ex: <https://example.org/fleet/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+<urn:fixture:occupancy-ends-before-start> a owl:Ontology ; owl:imports <https://example.org/fleet/blade-replacement> .
+ex:T09 a ex:WindTurbine .
+ex:pos-T09-blade-A a weso:ComponentPosition ; weso:instantiatesKind ex:pk-blade ; weso:positionOf ex:T09 .
+ex:blade-sn-6000 a ex:Blade .
+ex:occ-bad a weso:PositionOccupancy ; weso:occupiedPosition ex:pos-T09-blade-A ;
+  weso:occupant ex:blade-sn-6000 ;
+  weso:occupancyStart "2022-05-01T00:00:00"^^xsd:dateTime ; weso:occupancyEnd "2021-05-01T00:00:00"^^xsd:dateTime .

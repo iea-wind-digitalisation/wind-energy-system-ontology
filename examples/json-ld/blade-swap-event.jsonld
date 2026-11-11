@@ -1,0 +1,22 @@
+{
+  "@context": [
+    "https://w3id.org/ontoforge/weso/context.jsonld",
+    { "ex": "https://example.org/fleet/",
+      "rdswtg": "https://w3id.org/ontoforge/weso/align/rds-wtg/" }
+  ],
+  "@graph": [
+    { "id": "ex:blade-sn-5120", "type": "ex:Blade",
+      "conformsTo": "ex:B73P", "hasMassKg": "27505.0" },
+
+    { "id": "ex:d-sn-5120", "type": "Designation", "label": "ACME-B73P-5120",
+      "fromScheme": "ex:acme-serials", "designates": "ex:blade-sn-5120" },
+
+    { "id": "ex:occ-T07-C-1", "occupancyEnd": "2026-10-02T00:00:00" },
+    { "id": "ex:ev-remove-C-1", "type": "RemovalEvent",
+      "affectedOccupancy": "ex:occ-T07-C-1", "eventDate": "2026-10-02T00:00:00" },
+
+    { "id": "ex:occ-T07-C-2", "type": "PositionOccupancy",
+      "occupiedPosition": "ex:pos-T07-blade-C", "occupant": "ex:blade-sn-5120",
+      "occupancyStart": "2026-10-09T00:00:00" }
+  ]
+}

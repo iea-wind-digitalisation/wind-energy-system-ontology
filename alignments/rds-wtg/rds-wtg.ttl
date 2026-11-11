@@ -1,0 +1,73 @@
+################################################################################
+#  WESO alignment module: RDS for WTG (VGB/BDEW guideline, version 2.0, 2024)
+#
+#  The projection contract for the reference designation system for wind
+#  turbines, which applies IEC 81346. Each of the four aspect prefixes names a
+#  different kind of thing, and none of them names a physical unit.
+#
+#    =   function aspect           -> ComponentPosition (functional breakdown)
+#    -   product aspect            -> ComponentPosition (product breakdown; the tag)
+#    +   host of installation      -> ComponentPosition (the hosting position)
+#    ++  site of installation      -> Space
+#
+#  Counting numbers carry no meaning by the guideline's own statement, so
+#  -A1-RB1 and -A1-RB2 differ only by convention. That is why blade positions
+#  are told apart by designation and nothing else.
+################################################################################
+
+@prefix weso:    <https://w3id.org/ontoforge/weso/> .
+@prefix rdswtg:  <https://w3id.org/ontoforge/weso/align/rds-wtg/> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<https://w3id.org/ontoforge/weso/align/rds-wtg/> a owl:Ontology ;
+  owl:imports <https://w3id.org/ontoforge/weso/> ;
+  dcterms:title "WESO alignment: RDS for WTG"@en .
+
+rdswtg:scheme a weso:DesignationScheme ;
+  rdfs:label "RDS for WTG, version 2.0 (2024)"@en .
+
+# --- projection rules ---------------------------------------------------------
+
+rdswtg:rule-function a weso:ProjectionRule ;
+  rdfs:label "RDS for WTG function aspect"@en ;
+  weso:appliesToScheme rdswtg:scheme ;
+  weso:sourceConstruct "=" ;
+  weso:projectsOnto weso:ComponentPosition ;
+  skos:scopeNote "Names a node in the function-oriented breakdown. Not a BFO function: it can exist before any hardware does, and it changes when a unit moves between identical slots."@en .
+
+rdswtg:rule-product a weso:ProjectionRule ;
+  rdfs:label "RDS for WTG product aspect"@en ;
+  weso:appliesToScheme rdswtg:scheme ;
+  weso:sourceConstruct "-" ;
+  weso:projectsOnto weso:ComponentPosition ;
+  skos:scopeNote "The predominant aspect, used for physical labelling and tag numbers. Its parent chain can differ from the function aspect's for the same position."@en .
+
+rdswtg:rule-host a weso:ProjectionRule ;
+  rdfs:label "RDS for WTG host of installation"@en ;
+  weso:appliesToScheme rdswtg:scheme ;
+  weso:sourceConstruct "+" ;
+  weso:projectsOnto weso:ComponentPosition ;
+  skos:scopeNote "Names the hosting position. Consumed as weso:hostedBy rather than creating anything new."@en .
+
+rdswtg:rule-site a weso:ProjectionRule ;
+  rdfs:label "RDS for WTG site of installation"@en ;
+  weso:appliesToScheme rdswtg:scheme ;
+  weso:sourceConstruct "++" ;
+  weso:projectsOnto weso:Space .
+
+# --- depth scale --------------------------------------------------------------
+# Depth = number of code segments after the prefix (=A1=JF2=KJ1 has depth 3).
+# Local to this scheme; not comparable to ISO 14224 levels without an explicit,
+# argued finerThan assertion.
+
+rdswtg:depth a weso:GranularityScale ;
+  rdfs:label "RDS for WTG breakdown depth"@en .
+
+rdswtg:depth1 a weso:GranularityLevel ; rdfs:label "depth 1"@en ; weso:inScale rdswtg:depth .
+rdswtg:depth2 a weso:GranularityLevel ; rdfs:label "depth 2"@en ; weso:inScale rdswtg:depth ; weso:finerThan rdswtg:depth1 .
+rdswtg:depth3 a weso:GranularityLevel ; rdfs:label "depth 3"@en ; weso:inScale rdswtg:depth ; weso:finerThan rdswtg:depth2 .
+rdswtg:depth4 a weso:GranularityLevel ; rdfs:label "depth 4"@en ; weso:inScale rdswtg:depth ; weso:finerThan rdswtg:depth3 .
+rdswtg:depth5 a weso:GranularityLevel ; rdfs:label "depth 5"@en ; weso:inScale rdswtg:depth ; weso:finerThan rdswtg:depth4 .

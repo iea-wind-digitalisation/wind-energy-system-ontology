@@ -1,0 +1,18 @@
+# MUST FAIL: a gearbox recorded as occupying a blade position.
+# The blade slot prescribes the aerodynamic torque function; a gearbox does
+# not bear it.
+@prefix weso: <https://w3id.org/ontoforge/weso/> .
+@prefix rdswtg: <https://w3id.org/ontoforge/weso/align/rds-wtg/> .
+@prefix ex: <https://example.org/fleet/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+<urn:fixture:wrong-function-in-slot> a owl:Ontology ; owl:imports <https://example.org/fleet/blade-replacement> .
+ex:SpeedIncreaseFunction a owl:Class ; rdfs:subClassOf weso:ComponentFunction .
+ex:Gearbox a owl:Class ; rdfs:subClassOf weso:ComponentUnit ,
+  [ a owl:Restriction ; owl:onProperty weso:bearsFunction ; owl:someValuesFrom ex:SpeedIncreaseFunction ] .
+ex:T08 a ex:WindTurbine .
+ex:pos-T08-blade-A a weso:ComponentPosition ; weso:instantiatesKind ex:pk-blade ; weso:positionOf ex:T08 .
+ex:gbx-999 a ex:Gearbox .
+ex:occ-bad a weso:PositionOccupancy ; weso:occupiedPosition ex:pos-T08-blade-A ;
+  weso:occupant ex:gbx-999 ; weso:occupancyStart "2020-01-01T00:00:00"^^xsd:dateTime .

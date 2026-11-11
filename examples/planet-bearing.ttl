@@ -1,0 +1,194 @@
+################################################################################
+#  Example: a planet bearing in the gearbox of turbine T07
+#
+#  Shows:
+#    - all four RDS for WTG aspects landing on their own primitives
+#    - three planet bearing positions per planetary stage (multiplicity)
+#    - a part-number scheme whose strings name MODELS, beside a serial scheme
+#      whose strings name UNITS
+#    - the gearbox oil as a portion of material, one charge serving several
+#      positions
+#    - a failure and replacement, with exposure counted per position
+#
+#  RDS codes deeper than =A1=JF2=KJ1 are a HYPOTHETICAL manufacturer extension:
+#  the guideline permits sub-dividing the bearing system but does not
+#  standardise it. The site code ++A1++LA1 is likewise illustrative.
+#
+#  Walkthrough: docs/worked-examples.md
+################################################################################
+
+@prefix weso:   <https://w3id.org/ontoforge/weso/> .
+@prefix rdswtg: <https://w3id.org/ontoforge/weso/align/rds-wtg/> .
+@prefix ex:     <https://example.org/fleet/> .
+@prefix owl:    <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos:   <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+
+<https://example.org/fleet/planet-bearing> a owl:Ontology ;
+  owl:imports <https://w3id.org/ontoforge/weso/align/rds-wtg/> .
+
+
+# 1. FUNCTION TYPES
+ex:SpeedIncreaseFunction a owl:Class ; rdfs:subClassOf weso:ComponentFunction ;
+  rdfs:label "speed increase function"@en .
+ex:PlanetSupportFunction a owl:Class ; rdfs:subClassOf weso:ComponentFunction ;
+  rdfs:label "planet support function"@en ;
+  skos:definition "The function of carrying a planet gear on its pin while permitting rotation under load."@en .
+ex:LubricationFunction a owl:Class ; rdfs:subClassOf weso:ComponentFunction ;
+  rdfs:label "lubrication function"@en .
+
+
+# 2. COMPONENT TYPES
+ex:WindTurbine a owl:Class ; rdfs:subClassOf weso:ComponentUnit ; rdfs:label "wind turbine"@en .
+
+ex:Gearbox a owl:Class ; rdfs:subClassOf weso:ComponentUnit ;
+  rdfs:subClassOf [ a owl:Restriction ; owl:onProperty weso:bearsFunction ;
+                    owl:someValuesFrom ex:SpeedIncreaseFunction ] ;
+  rdfs:label "gearbox"@en .
+
+ex:PlanetBearing a owl:Class ; rdfs:subClassOf weso:ComponentUnit ;
+  rdfs:subClassOf [ a owl:Restriction ; owl:onProperty weso:bearsFunction ;
+                    owl:someValuesFrom ex:PlanetSupportFunction ] ;
+  rdfs:label "planet bearing"@en .
+
+ex:GearOil a owl:Class ; rdfs:subClassOf weso:PortionOfMaterial ;
+  rdfs:subClassOf [ a owl:Restriction ; owl:onProperty weso:bearsFunction ;
+                    owl:someValuesFrom ex:LubricationFunction ] ;
+  rdfs:label "gear oil"@en .
+
+
+# 3. COMPONENT MODELS
+ex:GB4200 a weso:ComponentModel ; rdfs:label "ACME GB-4200 gearbox"@en ;
+  weso:modelOfType ex:Gearbox ; weso:partNumber "GB4200" ; weso:nominalMassKg 41000.0 .
+ex:PLB225 a weso:ComponentModel ; rdfs:label "ACME planet bearing PLB-225"@en ;
+  weso:modelOfType ex:PlanetBearing ; weso:partNumber "GB4200-PLB-225" ; weso:nominalMassKg 210.0 .
+ex:OilVG320 a weso:ComponentModel ; rdfs:label "Synthetic gear oil, ISO VG 320"@en ;
+  weso:modelOfType ex:GearOil .
+
+
+# 4. POSITION KINDS
+ex:pk-drivetrain a weso:PositionKind ; rdfs:label "drivetrain position"@en .
+
+ex:pk-gearbox a weso:PositionKind ; rdfs:label "gearbox position"@en ;
+  weso:kindParent ex:pk-drivetrain ;
+  weso:prescribesFunction ex:SpeedIncreaseFunction .
+
+ex:pk-planet-bearing a weso:PositionKind ; rdfs:label "planet bearing position"@en ;
+  weso:kindParent ex:pk-gearbox ;
+  weso:prescribesFunction ex:PlanetSupportFunction ;
+  weso:attributionScope ex:UnitOnly .
+
+ex:pk-gearbox-oil a weso:PositionKind ; rdfs:label "gearbox oil charge"@en ;
+  weso:kindParent ex:pk-gearbox ;
+  weso:prescribesFunction ex:LubricationFunction .
+
+ex:UnitOnly a weso:AttributionScope ; rdfs:label "unit only"@en .
+
+
+# 5. POSITIONS IN T07
+#    Planet bearing positions are given positionOf T07, matching the RDS tag,
+#    which is turbine-relative. Whether they should instead belong to the
+#    gearbox unit (and travel with it on a gearbox swap) is an open question.
+ex:T07 a ex:WindTurbine ; rdfs:label "Turbine T07"@en .
+ex:space-T07-nacelle a weso:Space ; rdfs:label "nacelle, T07"@en .
+
+ex:pos-T07-gearbox a weso:ComponentPosition ; rdfs:label "gearbox position, T07"@en ;
+  weso:instantiatesKind ex:pk-gearbox ; weso:positionOf ex:T07 ;
+  weso:locatedIn ex:space-T07-nacelle .
+
+ex:pos-T07-pb1 a weso:ComponentPosition ; rdfs:label "planet bearing position 1, T07"@en ;
+  weso:instantiatesKind ex:pk-planet-bearing ; weso:positionOf ex:T07 ;
+  weso:assemblyParent ex:pos-T07-gearbox ; weso:hostedBy ex:pos-T07-gearbox .
+ex:pos-T07-pb2 a weso:ComponentPosition ; rdfs:label "planet bearing position 2, T07"@en ;
+  weso:instantiatesKind ex:pk-planet-bearing ; weso:positionOf ex:T07 ;
+  weso:assemblyParent ex:pos-T07-gearbox ; weso:hostedBy ex:pos-T07-gearbox .
+ex:pos-T07-pb3 a weso:ComponentPosition ; rdfs:label "planet bearing position 3, T07"@en ;
+  weso:instantiatesKind ex:pk-planet-bearing ; weso:positionOf ex:T07 ;
+  weso:assemblyParent ex:pos-T07-gearbox ; weso:hostedBy ex:pos-T07-gearbox .
+
+ex:pos-T07-oil a weso:ComponentPosition ; rdfs:label "gearbox oil charge, T07"@en ;
+  weso:instantiatesKind ex:pk-gearbox-oil ; weso:positionOf ex:T07 ;
+  weso:assemblyParent ex:pos-T07-gearbox .
+
+
+# 6. RDS DESIGNATIONS - four aspects, four landing places, none of them a unit.
+ex:d-gbx-fn a weso:Designation ; rdfs:label "=A1=JF2" ;
+  weso:fromScheme rdswtg:scheme ; weso:designates ex:pos-T07-gearbox ; weso:granularityLevel rdswtg:depth2 .
+ex:d-gbx-pr a weso:Designation ; rdfs:label "-A1-JF1" ;
+  weso:fromScheme rdswtg:scheme ; weso:designates ex:pos-T07-gearbox ; weso:granularityLevel rdswtg:depth2 ;
+  skos:scopeNote "JF1 here, JF2 in the function aspect: the two trees have different parents, so the strings are not one identifier with different prefixes."@en .
+ex:d-gbx-host a weso:Designation ; rdfs:label "+A1+JF1" ;
+  weso:fromScheme rdswtg:scheme ; weso:designates ex:pos-T07-gearbox .
+ex:d-nacelle-site a weso:Designation ; rdfs:label "++A1++LA1" ;
+  weso:fromScheme rdswtg:scheme ; weso:designates ex:space-T07-nacelle .
+
+ex:d-pb2-fn a weso:Designation ; rdfs:label "=A1=JF2=KJ1=KJ2=KJ2" ;
+  weso:fromScheme rdswtg:scheme ; weso:designates ex:pos-T07-pb2 ; weso:granularityLevel rdswtg:depth5 .
+ex:d-pb2-pr a weso:Designation ; rdfs:label "-A1-JF1-KJ1-KJ2-KJ2" ;
+  weso:fromScheme rdswtg:scheme ; weso:designates ex:pos-T07-pb2 ; weso:granularityLevel rdswtg:depth5 .
+
+
+# 7. MANUFACTURER SCHEMES - part numbers name models, serials name units.
+#    "GB4200-PLB-225" and "88113" could be either; the scheme decides.
+ex:acme-parts a weso:DesignationScheme ; rdfs:label "ACME part catalogue"@en .
+ex:acme-parts-rule a weso:ProjectionRule ;
+  weso:appliesToScheme ex:acme-parts ; weso:sourceConstruct "part number" ;
+  weso:projectsOnto weso:ComponentModel .
+
+ex:acme-serials a weso:DesignationScheme ; rdfs:label "ACME serial register"@en .
+ex:acme-serials-rule a weso:ProjectionRule ;
+  weso:appliesToScheme ex:acme-serials ; weso:sourceConstruct "serial number" ;
+  weso:projectsOnto weso:ComponentUnit .
+
+ex:d-part-plb225 a weso:Designation ; rdfs:label "GB4200-PLB-225" ;
+  weso:fromScheme ex:acme-parts ; weso:designates ex:PLB225 .
+ex:d-sn-gbx a weso:Designation ; rdfs:label "000-00-125" ;
+  weso:fromScheme ex:acme-serials ; weso:designates ex:gbx-000-00-125 .
+ex:d-sn-88113 a weso:Designation ; rdfs:label "88113" ;
+  weso:fromScheme ex:acme-serials ; weso:designates ex:pb-sn-88113 .
+
+
+# 8. PHYSICAL ITEMS
+ex:gbx-000-00-125 a ex:Gearbox ; weso:conformsTo ex:GB4200 ; weso:hasMassKg 41200.0 .
+
+ex:pb-sn-88101 a ex:PlanetBearing ; weso:conformsTo ex:PLB225 .
+ex:pb-sn-88113 a ex:PlanetBearing ; weso:conformsTo ex:PLB225 .
+ex:pb-sn-88127 a ex:PlanetBearing ; weso:conformsTo ex:PLB225 .
+ex:pb-sn-94720 a ex:PlanetBearing ; weso:conformsTo ex:PLB225 .
+
+ex:oil-charge-2024-03 a ex:GearOil ; weso:conformsTo ex:OilVG320 ; weso:hasMassKg 380.0 .
+
+
+# 9. OCCUPANCIES
+ex:occ-gbx a weso:PositionOccupancy ;
+  weso:occupiedPosition ex:pos-T07-gearbox ; weso:occupant ex:gbx-000-00-125 ;
+  weso:occupancyStart "2019-04-12T00:00:00"^^xsd:dateTime .
+
+ex:occ-pb1 a weso:PositionOccupancy ;
+  weso:occupiedPosition ex:pos-T07-pb1 ; weso:occupant ex:pb-sn-88101 ;
+  weso:occupancyStart "2019-04-12T00:00:00"^^xsd:dateTime .
+ex:occ-pb2-1 a weso:PositionOccupancy ;
+  weso:occupiedPosition ex:pos-T07-pb2 ; weso:occupant ex:pb-sn-88113 ;
+  weso:occupancyStart "2019-04-12T00:00:00"^^xsd:dateTime ;
+  weso:occupancyEnd   "2023-08-30T00:00:00"^^xsd:dateTime .
+ex:occ-pb2-2 a weso:PositionOccupancy ;
+  weso:occupiedPosition ex:pos-T07-pb2 ; weso:occupant ex:pb-sn-94720 ;
+  weso:occupancyStart "2023-09-04T00:00:00"^^xsd:dateTime .
+ex:occ-pb3 a weso:PositionOccupancy ;
+  weso:occupiedPosition ex:pos-T07-pb3 ; weso:occupant ex:pb-sn-88127 ;
+  weso:occupancyStart "2019-04-12T00:00:00"^^xsd:dateTime .
+
+# One oil charge, one position - but all three planet bearings depend on it.
+# Failures at pb1-pb3 are therefore not independent observations.
+ex:occ-oil a weso:PositionOccupancy ;
+  weso:occupiedPosition ex:pos-T07-oil ; weso:occupant ex:oil-charge-2024-03 ;
+  weso:occupantQuantity 380.0 ;
+  weso:occupancyStart "2024-03-18T00:00:00"^^xsd:dateTime .
+
+
+# 10. FAILURE
+ex:fail-pb2-2023 a weso:FailureEvent ;
+  weso:affectedOccupancy ex:occ-pb2-1 ;
+  weso:eventDate "2023-08-30T00:00:00"^^xsd:dateTime ;
+  skos:scopeNote "Reported against the product tag -A1-JF1-KJ1-KJ2-KJ2. Which external reporting bucket it falls in is derived, never recorded at source."@en .

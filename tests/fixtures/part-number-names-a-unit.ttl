@@ -1,0 +1,11 @@
+# MUST FAIL: a catalogue part number mapped onto one physical bearing.
+# A part number names a model; only a serial number names a unit.
+@prefix weso: <https://w3id.org/ontoforge/weso/> .
+@prefix rdswtg: <https://w3id.org/ontoforge/weso/align/rds-wtg/> .
+@prefix ex: <https://example.org/fleet/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+<urn:fixture:part-number-names-a-unit> a owl:Ontology ; owl:imports <https://example.org/fleet/planet-bearing> .
+ex:d-bad a weso:Designation ; rdfs:label "GB4200-PLB-225" ;
+  weso:fromScheme ex:acme-parts ; weso:designates ex:pb-sn-94720 .

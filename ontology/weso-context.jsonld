@@ -1,0 +1,46 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "weso": "https://w3id.org/ontoforge/weso/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+
+    "id": "@id",
+    "type": "@type",
+    "label": "rdfs:label",
+
+    "ComponentPosition": "weso:ComponentPosition",
+    "PositionKind": "weso:PositionKind",
+    "ComponentUnit": "weso:ComponentUnit",
+    "PopulationItem": "weso:PopulationItem",
+    "PortionOfMaterial": "weso:PortionOfMaterial",
+    "ComponentModel": "weso:ComponentModel",
+    "PositionOccupancy": "weso:PositionOccupancy",
+    "Designation": "weso:Designation",
+    "DesignationScheme": "weso:DesignationScheme",
+    "FailureEvent": "weso:FailureEvent",
+    "InstallationEvent": "weso:InstallationEvent",
+    "RemovalEvent": "weso:RemovalEvent",
+    "Space": "weso:Space",
+
+    "instantiatesKind": { "@id": "weso:instantiatesKind", "@type": "@id" },
+    "positionOf":       { "@id": "weso:positionOf", "@type": "@id" },
+    "assemblyParent":   { "@id": "weso:assemblyParent", "@type": "@id" },
+    "functionalParent": { "@id": "weso:functionalParent", "@type": "@id" },
+    "hostedBy":         { "@id": "weso:hostedBy", "@type": "@id" },
+    "locatedIn":        { "@id": "weso:locatedIn", "@type": "@id" },
+    "conformsTo":       { "@id": "weso:conformsTo", "@type": "@id" },
+    "occupiedPosition": { "@id": "weso:occupiedPosition", "@type": "@id" },
+    "occupant":         { "@id": "weso:occupant", "@type": "@id" },
+    "affectedOccupancy":{ "@id": "weso:affectedOccupancy", "@type": "@id" },
+    "fromScheme":       { "@id": "weso:fromScheme", "@type": "@id" },
+    "designates":       { "@id": "weso:designates", "@type": "@id" },
+
+    "occupancyStart":   { "@id": "weso:occupancyStart", "@type": "xsd:dateTime" },
+    "occupancyEnd":     { "@id": "weso:occupancyEnd", "@type": "xsd:dateTime" },
+    "eventDate":        { "@id": "weso:eventDate", "@type": "xsd:dateTime" },
+    "hasMassKg":        { "@id": "weso:hasMassKg", "@type": "xsd:decimal" },
+    "nominalMassKg":    { "@id": "weso:nominalMassKg", "@type": "xsd:decimal" },
+    "partNumber":       "weso:partNumber"
+  }
+}
